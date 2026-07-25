@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Моя волна</title>
+    <title>AlngelSaveMe</title>
     <style>
         * {
             box-sizing: border-box;
@@ -221,6 +221,118 @@
                 font-size: 1.4rem;
             }
         }
+
+        /* Анонимная кнопка и модалка */
+        .anon-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 204, 0, 0.3);
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 50px;
+        }
+
+        .anon-btn:hover {
+            background: rgba(255, 204, 0, 0.08);
+            color: #FFCC00;
+            border-color: #FFCC00;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1a1a24;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .modal h3 {
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+            color: #FFCC00;
+        }
+
+        .modal textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            margin-bottom: 16px;
+        }
+
+        .modal textarea:focus {
+            border-color: #FFCC00;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .modal-btn.submit {
+            background: #FFCC00;
+            color: #0d0d14;
+        }
+
+        .modal-btn.cancel {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -229,9 +341,32 @@
     <div class="wrap">
 
         <div class="hero">
-            <h1>Ты действительно хочешь 
+            <h1>Ты действительно хочешь
                 это попробовать?</h1>
             <p>Психотерапевт от 5000р, помните об этом перед прослушиванием</p>
+        </div>
+        <!-- Кнопка вызова модалки -->
+        <button class="anon-btn" onclick="openModal()">Добей меня своим сообщением (анонимно)</button>
+
+        <!-- Модальное окно -->
+        <div class="modal-overlay" id="anonModal">
+            <div class="modal">
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3>Тайное сообщение 🕳️</h3>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 16px;">
+                    Никаких имён, IP и следов. Только текст.
+                </p>
+                <form id="anonForm" action="https://formspree.io/f/mvzevqeg" method="POST">
+                    <textarea name="message" placeholder="Напиши что-нибудь..." required></textarea>
+                    <!-- Скрытое поле, чтобы Formspree знал, куда перенаправить или что это анонимно -->
+                    <input type="hidden" name="_subject" value="Новое анонимное сообщение с сайта!">
+                    <div class="modal-actions">
+                        <button type="button" class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+                        <button type="submit" class="modal-btn submit" id="submitBtn">Отправить в пустоту</button>
+                    </div>
+                </form>
+                <p id="formStatus" style="display:none; text-align:center; margin-top:12px; color:#FFCC00;"></p>
+            </div>
         </div>
 
         <div class="links" id="links"></div>
@@ -249,6 +384,54 @@
     </div>
 
     <script>
+
+        // Управление модальным окном
+        function openModal() {
+            document.getElementById('anonModal').classList.add('active');
+            document.querySelector('.modal textarea').focus();
+        }
+        function closeModal() {
+            document.getElementById('anonModal').classList.remove('active');
+        }
+
+        // Закрытие по клику вне окна
+        document.getElementById('anonModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Обработка отправки формы без перезагрузки страницы
+        document.getElementById('anonForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('formStatus');
+
+            btn.textContent = 'Отправка...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    form.style.display = 'none';
+                    status.textContent = 'Сообщение растворилось в эфире... 👻';
+                    status.style.display = 'block';
+                    setTimeout(closeModal, 2500);
+                } else {
+                    throw new Error('Ошибка отправки');
+                }
+            } catch (error) {
+                status.textContent = 'Что-то пошло не так. Попробуй через Telegram.';
+                status.style.color = '#FF5E62';
+                status.style.display = 'block';
+                btn.textContent = 'Отправить в пустоту';
+                btn.disabled = false;
+            }
+        });
         // Массив ссылок (редактируй только этот блок)
         const LINKS = [
             {
